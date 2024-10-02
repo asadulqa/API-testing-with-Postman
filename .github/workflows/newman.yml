@@ -1,37 +1,44 @@
-# name: Run Postman Collection
+name: Test-Build
+on:
+  push:
+    branches:
+      - main
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   schedule:
-#     - cron: '0 * * * *'
 
-# jobs:
-#   run-collection:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v2
+      # INstall Node on the runner
+      - name: Install Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
 
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v2
-#         with:
-#           node-version: 14
 
-#       - name: Install newman and htmlreports
-#         run: npm install -g newman@5.3.2 newman-reporter-htmlextra@1.22.11
-        
-#       - name: Run collection
-#         run: newman run Reqrea REST API Testing.postman_collection.json -e PROD.postman_environment.json -r htmlextra --verbose
-        
-#       - name: Find HTML file
-#         run: |
-#           FILE=$(find . -name "*.html" -type f)
-#           echo "FILE=$FILE" >> $GITHUB_ENV  
-          
-#       - name: Upload results
-#         uses: actions/upload-artifact@v2
-#         with:
-#           name: newman-results
-#           path: ${{ env.FILE }}
+      # Install the newman command line utility and also install the html extra reporter
+      - name: Install newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+
+
+      # Make directory to upload the test results
+      - name: Make Directory for results
+        run: mkdir -p testResults
+
+
+      # Run the POSTMAN collection
+      - name: Run POSTMAN collection
+        run: |
+          newman run Reqrea REST API Testing.postman_collection.json -r htmlextra --reporter-htmlextra-export testResults/htmlreport.html --reporter-htmlextra-darkTheme  > testResults/runreport1.html
+
+
+      # Upload the contents of Test Results directory to workspace
+      - name: Output the run Details
+        uses: actions/upload-artifact@v2
+        with:
+          name: RunReports
+          path: testResults
